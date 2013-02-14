@@ -35,12 +35,9 @@ class elgamal:
     def decode(self, encoded_char):
         y1 = encoded_char[0]
         y2 = encoded_char[1]
-        
         y1poly = FiniteFieldElt(self.GF, self.dictionary[y1])
         y2poly = FiniteFieldElt(self.GF, self.dictionary[y2])     
-        
         inv_y1_raised_to_private_key = (y1poly**self.private_key)**25
-
         ans = eval(str(y2poly*inv_y1_raised_to_private_key))
         assert(len(ans)==3)        
         return self.rev_dictionary[str(ans)]
