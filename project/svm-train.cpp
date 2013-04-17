@@ -155,25 +155,16 @@ int svm_train::take_step(int i1, int i2) {
   // compute L, H
   if (y1 == y2) {
     float gamma = alpha1_old + alpha2_old;
-    if (gamma > slack_penalty) {
-      L = gamma - slack_penalty;
-      H = slack_penalty;
-    } else {
-      L = 0;
-      H = gamma;
-    }
+    L = max((float)0., gamma - slack_penalty);
+    H = min(slack_penalty, gamma);
   } else {
-    float gamma = alpha1_old - alpha2_old;
-    if (gamma > 0) {
-      L = 0;
-      H = slack_penalty - gamma;
-    } else {
-      L = -gamma;
-      H = slack_penalty;
-    }
+    float gamma = alpha2_old - alpha1_old;
+    L = max((float)0., gamma);
+    H = min(slack_penalty, slack_penalty + gamma);
   }
   if (L==H)
     return 0;
+
   // compute eta
   k11 = (this->*kernel_function)(i1, i1);
   k12 = (this->*kernel_function)(i1, i2);
@@ -188,14 +179,20 @@ int svm_train::take_step(int i1, int i2) {
       alpha2_new = H;
   } else {
     // compute Lobj = objective function at alpha2=L. Similarly Hobj
-    {
+    /*{
       float c1 = eta/2, c2 = y2*(E1-E2)-eta*alpha2_old;
       Lobj = c1*L*L + c2*L;
       Hobj = c1*H*H + c2*H;
-    }
-    if (Lobj > Hobj + epsilon)
+      }*/
+    float f1 = y1*(E1 + threshold) - alpha1_old*k11 - s*alpha2_old*k12;
+    float f2 = y2*(E2 + threshold) - s*alpha1_old*k12 - alpha2_old*k22;
+    float L1 = alpha1_old + s*(alpha2_old - L);
+    float H1 = alpha1_old + s*(alpha2_old - H);
+    float Lobj = L1*f1 + L*f2 + .5*L1*L1*k11 + .5*L*L*k22 + s*L*L1*k12;
+    float Hobj = H1*f1 + H*f2 + .5*H1*H1*k11 + .5*H*H*k22 + s*H*H1*k12;
+    if (Lobj < Hobj - epsilon)
       alpha2_new = L;
-    else if (Lobj < Hobj - epsilon)
+    else if (Lobj < Hobj + epsilon)
       alpha2_new = H;
     else
       alpha2_new = alpha2_old;
@@ -213,23 +210,19 @@ int svm_train::take_step(int i1, int i2) {
     alpha1_new = slack_penalty;
   }
 
-  // update threshold to reflect change in lagrange multipliers
-  {
-    float b1, b2, threshold_new;
-    if (alpha1_new > 0 && alpha1_new < slack_penalty)
-      threshold_new = threshold + E1 + y1*(alpha1_new-alpha1_old)*k11 + y2*(alpha2_new-alpha2_old)*k12;
-    else {
-      if (alpha2_new > 0 && alpha2_new < slack_penalty)
-	threshold_new = threshold + E2 + y1*(alpha1_new-alpha1_old)*k12 + y2*(alpha2_new-alpha2_old)*k22;
-      else {
-	b1 = threshold + E1 + y1*(alpha1_new-alpha1_old)*k11 + y2*(alpha2_new-alpha2_old)*k12;
-	b2 = threshold + E2 + y1*(alpha1_new-alpha1_old)*k12 + y2*(alpha2_new-alpha2_old)*k22;
-	threshold_new = (b1+b2)/2;
-      }
-    }
-    delta_threshold = threshold_new - threshold;
-    threshold = threshold_new;
-  }
+  // update threshold to reflect change in lagrange multipliers 
+  float b1 = threshold + E1 + y1*(alpha1_new-alpha1_old)*k11 + y2*(alpha2_new-alpha2_old)*k12;
+  float b2 = threshold + E2 + y1*(alpha1_new-alpha1_old)*k12 + y2*(alpha2_new-alpha2_old)*k22;
+  float threshold_new;
+  if (alpha1_new > 0 && alpha1_new < slack_penalty)
+    threshold_new = b1;
+  else if (alpha2_new > 0 && alpha2_new < slack_penalty)
+      threshold_new = b2;
+  else 
+      threshold_new = (b1+b2)/2;
+  /* what is this */  
+  delta_threshold = threshold_new - threshold;
+  threshold = threshold_new;  
 
   float t1 = y1*(alpha1_new - alpha1_old);
   float t2 = y2*(alpha2_new-alpha2_old);
@@ -284,10 +277,11 @@ void svm_train::write_svm() {
   svm_file << num_features << endl;
   svm_file << is_linear_kernel << endl;
   svm_file << threshold << endl;
-  if (is_linear_kernel)
+  // if (is_linear_kernel)
     for (int i=0; i<num_features; i++)
       svm_file << hyperplane[i] << endl;
-  else {
+    svm_file << "hyperplane ended"<<endl;
+    // else {
     svm_file << two_sigma_squared << endl;
     int num_sv = 0;
     for (int i=0; i<num_examples; i++)
@@ -306,7 +300,7 @@ void svm_train::write_svm() {
 	svm_file<<endl;
       } 
     }
-  }
+    //}
 }
 
 int main(int argc, char** argv) {  
