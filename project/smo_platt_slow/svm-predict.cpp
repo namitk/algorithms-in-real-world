@@ -1,11 +1,10 @@
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
-#include <algorithm>
-#include <functional>
-#include <unistd.h>
 #include <cmath>
 #include <string>
+#include <functional>
+#include <unistd.h>
 #include <sstream>
 #include <vector>
 #include <fstream>
@@ -22,7 +21,7 @@ svm_predict::svm_predict(char* test_file,
   read_svm();     
 
   if (is_linear_kernel) {
-    classify_example = &svm_base::classify_example_linear;
+    classify_example = &svm_predict::classify_example_linear;
     kernel_function = &svm_base::dot_product;
   } else {
     assert(num_examples == num_support_vectors);
@@ -46,8 +45,8 @@ void svm_predict::read_svm() {
     hyperplane = new float[num_features];
     for (int i=0; i<num_features; i++)
       file >> hyperplane[i];
-  } else {
-    file >> two_sigma_squared;
+      } else {
+  file >> two_sigma_squared;
     file >> num_support_vectors;
     sv_alphas = new float[num_support_vectors];
     for (int i=0; i<num_support_vectors; i++)
@@ -88,7 +87,7 @@ float svm_predict::test() {
       if ((result > 0) != (label == 1))     
 	num_misclassified++;
     }
-    return num_misclassified*100.0/num_test_examples;
+    return (num_test_examples - num_misclassified)*100.0/num_test_examples;
   }
 }
 

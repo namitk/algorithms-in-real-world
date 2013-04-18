@@ -1,0 +1,11 @@
+f = open(sys.argv[1], 'r')
+l = f.readline()
+l1 = ""
+l2 = ""
+n = float(sys.argv[2])
+while l:
+    tok = l.split("\t")
+    l1 += tok[0] + "&"
+    l2 += tok[1] + "&"
+    l3 += str(float(tok[1])/n) + "&"
+    l = f.readline()

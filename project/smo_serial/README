@@ -1,0 +1,8 @@
+README for Sequential Version
+
+Compilation:
+g++ main.cpp -o serial
+
+To Run on input file a9a:-
+
+./serial -f a9a -m a9a.model -l

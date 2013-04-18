@@ -1,0 +1,7 @@
+plot "a9a.graph" using 1:2 with linespoints
+set title "No. of processors vs Time taken on a9a dataset"
+set xlabel "No. of processors"
+set ylabel "Time (in seconds)"
+set grid
+set term png
+set output a9a.png

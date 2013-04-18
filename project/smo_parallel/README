@@ -1,0 +1,21 @@
+Compilation:-
+
+mpic++ main.cpp -o parallel
+
+Running on P processors using MPI:-
+
+mpiexec -n P parallel -f <DATAFILE> -m <MODELFILE> -l
+
+For example, running on P=4 processors on input file a9a :-
+
+mpiexec -n 4 parallel -f a9a -m a9a.model -l
+
+We have also provided the script we used for timing our simulations.
+To run it on a9a, type:-
+
+bash sim.bash -f a9a
+
+It will create the model file in ./models/a9a.model
+It will record the timings in ./sims/a9a.sim
+[Both the models and sims directories should exist!]
+
